@@ -23,6 +23,13 @@ def fetchInput():
             description = 'Script that gets keywords to input to carrefour website'
             )
     parser.add_argument(
+        '--timestamp',
+        '-ts',
+        type = str,
+        help = 'Time stamp of the request',
+        required = False,
+        default = datetime.now())
+    parser.add_argument(
             '--product',
             '-p',
             type = str,
@@ -35,24 +42,16 @@ def fetchInput():
             help = 'User that requested the price fetch',
             required = True,
             default = '')
-    parser.add_argument(
-            '--timestamp',
-            '-ts',
-            type = str,
-            help = 'Time stamp of the request',
-            required = False,
-            default = datetime.now())
 
     args = parser.parse_args()
-    arg_list = [urlCreator(args.product)]        #init list "arg_list" with url
+    arg_list = []
 
     for item in vars(args):
         arg_list.append(getattr(args,item))     # for item in namespace, get attribute and append to list "arglist"
-
+    arg_list.append(urlCreator(args.product))       #append url to list "arg_list"
     print(arg_list)
     return arg_list
-fetchInput()
 
-if __name__ == 'main':
+if __name__ == '__main__':
 #    urlCreator()
     fetchInput()
