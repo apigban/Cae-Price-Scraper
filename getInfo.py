@@ -2,7 +2,7 @@
 
 import argparse
 from datetime import datetime
-
+from pageQueue import redisWrite
 
 def urlCreator(product):
 
@@ -13,14 +13,12 @@ def urlCreator(product):
     #print(query_url)
     return query_url
 
+@redisWrite
 def fetchInput():
     """
     Gets parameters from command line arguments and
     passes it to indeed_scraper function in scraper file
     """
-
-    arg_list = []
-
     parser = argparse.ArgumentParser(
             description = 'Script that gets keywords to input to carrefour website'
             )
@@ -46,11 +44,12 @@ def fetchInput():
             default = datetime.now())
 
     args = parser.parse_args()
-    query_url = urlCreator(args.product)
+    arg_list = [urlCreator(args.product)]        #init list "arg_list" with url
 
     for item in vars(args):
-        arg_list.append(getattr(args,item))
+        arg_list.append(getattr(args,item))     # for item in namespace, get attribute and append to list "arglist"
 
+    print(arg_list)
     return arg_list
 fetchInput()
 
