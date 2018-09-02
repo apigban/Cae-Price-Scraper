@@ -21,7 +21,7 @@ def redisWrite(function_toWrite):
     @functools.wraps(function_toWrite)
     def wrapper_redisWrite(*args, **kwargs):
         value = function_toWrite(*args, **kwargs)       # run function wrapped
-        value[2] = int(1000*value[2].timestamp())           #transform value[2] to timestamp to milliseconds and to type int
+        value[3] = int(1000*value[3].timestamp())           #transform value[2] to timestamp to milliseconds and to type int
         print(value)
         return value
 
