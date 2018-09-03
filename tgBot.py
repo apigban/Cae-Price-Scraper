@@ -1,7 +1,7 @@
 #!/usr/bin/env python3.7
 
 import requests
-import re
+from inputValidator import cmdValidator
 from datetime import datetime
 from tg_token import token
 
@@ -54,6 +54,13 @@ item = None
 now = datetime.now()
 
 
+def extractProduct(last_chat_id, last_chat_text):
+
+        cmd_valid = cmdValidator(last_chat_text)
+        if cmd_valid is None:
+            price_bot.reply(last_chat_id, 'Correct Usage:  getprice <item>\nExample:  getprice eggs')
+        print(last_chat_text.replace('getprice ',''))
+
 
 def main():
     new_offset = None
@@ -66,17 +73,19 @@ def main():
         last_update = price_bot.getLastUpdate()
 
         last_update_id = last_update['update_id']
-        last_chat_text = last_update['message']['text']
-        print(last_chat_text)
+        last_chat_text = last_update.get('message', default=None)
+        #last_chat_text = last_update.['message']['text']
         last_chat_id = last_update['message']['chat']['id']
         last_chat_name = last_update['message']['chat']['first_name']
 
-        if last_chat_text.lower() == 'getprice':
-            price_bot.reply(last_chat_id, f'Looking for price of {item}')
+        extractProduct(last_chat_id, last_chat_text)
+
+        #if last_chat_text.lower() == 'getprice':
+        #    price_bot.reply(last_chat_id, f'Looking for price of {item}')
 
 
         new_offset = last_update_id + 1
-        print(last_update)
+        #print(last_update)
 
 if __name__ == '__main__':
     try:
