@@ -36,11 +36,10 @@ def cmdValidator(arg_list):
             valid_product_list.append(item)
             valid_product = ' '.join(item for item in valid_product_list)
 
-    print(len(valid_product_list))
-    print(len(valid_product))
-    print(error_status)
-    #print(valid_status)  -- removing valid_status, use len[valid_product_list] < 1
-    return valid_product
+    #print(len(valid_product_list))
+    #print(len(valid_product))
+    #print(error_status)
+    return valid_product, error_status
 
 
 if __name__ == '__main__':
