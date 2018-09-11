@@ -6,7 +6,7 @@ import login_redis as lr
 from datetime import datetime
 
 
-redis_dump = redis.StrictRedis(
+rediscmd = redis.StrictRedis(
     host = lr.login['ip'],
     port = lr.login['port'],
     password = lr.login['password'],
@@ -20,10 +20,25 @@ def redisWrite(function_toWrite):
 
     @functools.wraps(function_toWrite)
     def wrapper_redisWrite(*args, **kwargs):
-        value = function_toWrite(*args, **kwargs)       # run function wrapped
-        value[0] = int(1000*value[0].timestamp())           #transform value[2] to timestamp to milliseconds and to type int
-        print(value)
-        return value
+        #valid_product, error_status, time_stamp, requester, request_id  = function_toWrite(*args, **kwargs)       # run function wrapped
 
- #   redis_dump.rpush('',value)
+        commit_list = function_toWrite(*args, **kwargs)       # run function wrapped
+        request_id = commit_list[4]
+
+
+        print(f'commit_list: {commit_list}')
+        #print(f'valid_product: {valid_product}')
+        #print(f'error_status: {error_status}')
+        #print(f'time_stamp: {time_stamp}')
+
+        rediscmd.rpush(request_id, *commit_list)
+        #return value
+
     return wrapper_redisWrite
+
+def pull_redisvalue():
+
+    total_messageQ = rediscmd.dbsize()
+    keys = rediscmd.ke
+
+    redis.dump.lrange(item)
