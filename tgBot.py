@@ -19,7 +19,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from tg_token import bot_token
 import logging
 from inputValidator import cmdValidator
-
+import pageQueue
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -48,10 +48,22 @@ def error(bot, update, error):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, error)
 
-def getprice(bot, update, **product):
+
+def get_userinfo(bot, update):
+    userid = update.message.from_user.id
+    user = update.message.from_user.first_name
+    messageid = update.message.message_id
+    update.message.reply_text(f'Hi {user}!')
+
+    return user, userid, messageid
+
+@pageQueue.redisWrite
+def get_price(bot, update, **product):
     """Extract the product from user message using module inputValidator's function cmdValidator"""
-    grocery_item, query_status = cmdValidator(product['args'])
-    print(grocery_item, query_status)
+
+    requester, user_id, request_id = get_userinfo(bot, update)
+
+    grocery_item, query_status, time_stamp = cmdValidator(product['args'])
 
     if query_status == 'empty':
         update.message.reply_text('YO! you\'ve entered no grocery item for me to find. \n\nPlease try again with /getprice <item> \n\n example:\n   /getprice strawberries')
@@ -68,6 +80,7 @@ def getprice(bot, update, **product):
     #product_query = ' '.join()
 #   bot.send_message(chat_id=update.message.chat_id, text=f'looking for the lowest price of {product_query}')
     #update.message.reply_text(f'Looking for the lowest price of {product_query}')
+    return grocery_item, query_status, time_stamp, requester, request_id
 
 
 def main():
@@ -81,7 +94,7 @@ def main():
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", help))
-    dp.add_handler(CommandHandler("getprice", getprice, pass_args=True))
+    dp.add_handler(CommandHandler("getprice", get_price, pass_args=True))
     # on noncommand i.e message - echo the message on Telegram
     #dp.add_handler(MessageHandler(Filters.text, echo))
     #dp.add_handler(MessageHandler(Filters.text, getprice))
