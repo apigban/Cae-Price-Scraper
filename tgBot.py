@@ -1,94 +1,102 @@
 #!/usr/bin/env python3.7
+# -*- coding: utf-8 -*-
 
-import requests
+"""Bot to retrieve telegram message.
+
+This Bot uses the Updater class to handle the bot.
+
+First, a few handler functions are defined. Then, those functions are passed to
+the Dispatcher and registered at their respective places.
+Then, the bot is started and runs until we press Ctrl-C on the command line.
+
+Usage:
+Basic Echobot example, repeats messages.
+Press Ctrl-C on the command line or send a signal to the process to stop the
+bot.
+"""
+
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from tg_token import bot_token
+import logging
 from inputValidator import cmdValidator
-from datetime import datetime
-from tg_token import token
 
 
-class BotHandler:
+# Enable logging
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
 
-    def __init__(self, token):
-        self.token = token
-        self.api_url = f'https://api.telegram.org/bot{token}/'
-        print(self.api_url)
-
-    def getUpdates(self, offset=None, timeout=30):
-        method = 'getUpdates'
-        params = {
-            'timeout': timeout,
-            'offset': offset
-            }
-        response = requests.get(self.api_url + method, params)
-        result_json = response.json()['result']
-        return result_json
-
-    def reply(self, chat_id, text):
-        method = 'sendMessage'
-        params = {
-                'chat_id': chat_id,
-                'text': text
-                }
-        response = requests.post(self.api_url + method, params)
-        return response
-
-    def getLastUpdate(self):
-        get_result = self.getUpdates()
-
-        if len(get_result) > 0:
-            last_update = get_result[-1]
-        else:
-            last_update = get_result[len(get_result)]
-        return last_update
+logger = logging.getLogger(__name__)
 
 
+# Define a few command handlers. These usually take the two arguments bot and
+# update. Error handlers also receive the raised TelegramError object in error.
+def start(bot, update):
+    """Send a message when the command /start is issued."""
+    update.message.reply_text('Hi!')
 
-price_bot = BotHandler(token)
-
-greetings = ('hello', 'hi', 'greetings', 'wassup')
-
-commands = ('getPrice', 'getItem', 'getLink')
-
-item = None
-
-now = datetime.now()
+def help(bot, update):
+    """Send a message when the command /help is issued."""
+    update.message.reply_text('Help!')
 
 
-def extractProduct(last_chat_id, last_chat_text):
+def echo(bot, update):
+    """Echo the user message."""
+    update.message.reply_text(update.message.text)
 
-        cmd_valid = cmdValidator(last_chat_text)
-        if cmd_valid is None:
-            price_bot.reply(last_chat_id, 'Correct Usage:  getprice <item>\nExample:  getprice eggs')
-        print(last_chat_text.replace('getprice ',''))
+
+def error(bot, update, error):
+    """Log Errors caused by Updates."""
+    logger.warning('Update "%s" caused error "%s"', update, error)
+
+def getprice(bot, update, **product):
+    """Extract the product from user message using module inputValidator's function cmdValidator"""
+    grocery_item, query_status = cmdValidator(product['args'])
+    print(grocery_item, query_status)
+
+    if query_status == 'empty':
+        update.message.reply_text('YO! you\'ve entered no grocery item for me to find. \n\nPlease try again with /getprice <item> \n\n example:\n   /getprice strawberries')
+
+    elif query_status == 'nonalpha':
+
+        update.message.reply_text('YO! Can\'t understand what you typed, please use letters. \n\nPlease try again with /getprice <item> \n\n example:\n   /getprice strawberries')
+
+    else:
+
+        update.message.reply_text(f'Looking for the price of {grocery_item}... Please wait...')
+
+
+    #product_query = ' '.join()
+#   bot.send_message(chat_id=update.message.chat_id, text=f'looking for the lowest price of {product_query}')
+    #update.message.reply_text(f'Looking for the lowest price of {product_query}')
 
 
 def main():
-    new_offset = None
-    today = now.day
-    hour = now.hour
+    """Start the bot."""
+    # Create the EventHandler and pass it your bot's token.
+    updater = Updater(bot_token)
 
+    # Get the dispatcher to register handlers
+    dp = updater.dispatcher
 
-    while True:
-        price_bot.getUpdates(new_offset)
-        last_update = price_bot.getLastUpdate()
+    # on different commands - answer in Telegram
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("help", help))
+    dp.add_handler(CommandHandler("getprice", getprice, pass_args=True))
+    # on noncommand i.e message - echo the message on Telegram
+    #dp.add_handler(MessageHandler(Filters.text, echo))
+    #dp.add_handler(MessageHandler(Filters.text, getprice))
 
-        last_update_id = last_update['update_id']
-        last_chat_text = last_update.get('message', default=None)
-        #last_chat_text = last_update.['message']['text']
-        last_chat_id = last_update['message']['chat']['id']
-        last_chat_name = last_update['message']['chat']['first_name']
+    # log all errors
+    dp.add_error_handler(error)
 
-        extractProduct(last_chat_id, last_chat_text)
+    # Start the Bot
+    updater.start_polling()
 
-        #if last_chat_text.lower() == 'getprice':
-        #    price_bot.reply(last_chat_id, f'Looking for price of {item}')
+    # Run the bot until you press Ctrl-C or the process receives SIGINT,
+    # SIGTERM or SIGABRT. This should be used most of the time, since
+    # start_polling() is non-blocking and will stop the bot gracefully.
+    updater.idle()
 
-
-        new_offset = last_update_id + 1
-        #print(last_update)
 
 if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt:
-        exit()
+    main()
